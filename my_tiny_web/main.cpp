@@ -11,8 +11,8 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
-#include "/home/asus/linux-high-effective/linux-high-effective/multithread-programming/code/locker.h"
-#include "threadpool.h"
+#include "locker.h"
+#include "threadpool-yibu.h"
 #include "http_conn.h"
 
 #define MAX_FD 65536           // 最大文件描述符数
@@ -46,10 +46,11 @@ int main(int argc, char* argv[]) {
     // 忽略SIGPIPE信号（避免写关闭的连接导致进程终止）
     addsig(SIGPIPE, SIG_IGN);
 
-    // 创建线程池
-    threadpool<http_conn>* pool = nullptr;
+    // 创建线程池（使用新的 ThreadPool）
+    ThreadPool* pool = nullptr;
     try {
-        pool = new threadpool<http_conn>;
+        // 保持默认最小线程数 4，最大为硬件并发数
+        pool = new ThreadPool(8, 8); // 固定8个线程，行为接近旧线程池
     } catch (...) {
         return 1;
     }
@@ -123,7 +124,9 @@ int main(int argc, char* argv[]) {
             // 读事件
             else if (events[i].events & EPOLLIN) {
                 if (users[sockfd].read()) { // 读取成功
-                    pool->append(users + sockfd); // 加入线程池处理
+                    http_conn* conn = users + sockfd;
+                    // 将任务封装为无参函数并传给新的线程池
+                    pool->addTask([conn]() { conn->process(); });
                 } else {
                     users[sockfd].close_conn(); // 读取失败则关闭
                 }

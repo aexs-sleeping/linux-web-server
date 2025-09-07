@@ -1,12 +1,13 @@
-#include "threadpool.h"
-#include <iostream>
+#include "threadpool-yibu.h"
+#include <cstdio>
+#include <functional>
 
 ThreadPool::ThreadPool(int min, int max) : m_maxThreads(max),
 m_minThreads(min), m_stop(false), m_exitNumber(0)
 {
     //m_idleThreads = m_curThreads = max / 2;
     m_idleThreads = m_curThreads = min;
-    cout << "线程数量: " << m_curThreads << endl;
+    printf("线程数量: %d\n", m_curThreads.load());
     m_manager = new thread(&ThreadPool::manager, this);
     for (int i = 0; i < m_curThreads; ++i)
     {
@@ -24,7 +25,7 @@ ThreadPool::~ThreadPool()
         thread& t = it.second;
         if (t.joinable())
         {
-            cout << "******** 线程 " << t.get_id() << " 将要退出了..." << endl;
+            printf("******** 线程 %zu 将要退出了...\n", std::hash<std::thread::id>{}(t.get_id()));
             t.join();
         }
     }
@@ -61,7 +62,7 @@ void ThreadPool::manager()
                 auto it = m_workers.find(id);
                 if (it != m_workers.end())
                 {
-                    cout << "############## 线程 " << (*it).first << "被销毁了...." << endl;
+                    printf("############## 线程 %zu 被销毁了....\n", std::hash<std::thread::id>{}((*it).first));
                     (*it).second.join();
                     m_workers.erase(it);
                 }
@@ -71,7 +72,7 @@ void ThreadPool::manager()
         else if (idle == 0 && current < m_maxThreads)
         {
             thread t(&ThreadPool::worker, this);
-            cout << "+++++++++++++++ 添加了一个线程, id: " << t.get_id() << endl;
+            printf("+++++++++++++++ 添加了一个线程, id: %zu\n", std::hash<std::thread::id>{}(t.get_id()));
             m_workers.insert(make_pair(t.get_id(), move(t)));
             m_curThreads++;
             m_idleThreads++;
@@ -91,7 +92,7 @@ void ThreadPool::worker()
                 m_condition.wait(locker);
                 if (m_exitNumber.load() > 0)
                 {
-                    cout << "----------------- 线程任务结束, ID: " << this_thread::get_id() << endl;
+                    printf("----------------- 线程任务结束, ID: %zu\n", std::hash<std::thread::id>{}(this_thread::get_id()));
                     m_exitNumber--;
                     m_curThreads--;
                     unique_lock<mutex> lck(m_idsMutex);
@@ -102,7 +103,7 @@ void ThreadPool::worker()
 
             if (!m_tasks.empty())
             {
-                cout << "取出一个任务..." << endl;
+                printf("取出一个任务...\n");
                 task = move(m_tasks.front());
                 m_tasks.pop();
             }
@@ -117,21 +118,4 @@ void ThreadPool::worker()
     }
 }
 
-void calc(int x, int y)
-{
-    int res = x + y;
-    cout << "res = " << res << endl;
-    this_thread::sleep_for(chrono::seconds(2));
-}
-
-int main()
-{
-    ThreadPool pool(4);
-    for (int i = 0; i < 10; ++i)
-    {
-        auto func = bind(calc, i, i * 2);
-        pool.addTask(func);
-    }
-    getchar();
-    return 0;
-}
+// demo functions removed: this translation unit now only implements ThreadPool

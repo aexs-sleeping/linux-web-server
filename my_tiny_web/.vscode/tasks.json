@@ -11,6 +11,7 @@
                 "-pthread",
                 "main.cpp",
                 "http_conn.cpp",
+                "threadpool-yibu.cpp",
                 "-o",
                 "output/my_tiny_web"
             ],
