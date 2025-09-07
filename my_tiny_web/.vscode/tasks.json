@@ -1,0 +1,28 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build my_tiny_web",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "-g",
+                "-O0",
+                "-pthread",
+                "main.cpp",
+                "http_conn.cpp",
+                "-o",
+                "output/my_tiny_web"
+            ],
+            "group": "build",
+            "problemMatcher": ["$gcc"],
+            "detail": "编译多线程服务器",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        }
+    ]
+}
