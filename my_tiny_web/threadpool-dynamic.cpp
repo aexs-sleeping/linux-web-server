@@ -1,4 +1,4 @@
-#include "threadpool-yibu.h"
+#include "threadpool-dynamic.h"
 #include <cstdio>
 #include <functional>
 
@@ -45,13 +45,15 @@ void ThreadPool::addTask(function<void()> f)
     m_condition.notify_one();
 }
 
+/// @brief ThreadPool::manager 是一个管理线程池的函数，它通过循环监控线程池的状态，根据空闲线程数量和当前线程数量动态调整线程池的大小。当空闲线程过多时会销毁部分线程，而当没有空闲线程且线程数量未达到上限时会创建新线程
 void ThreadPool::manager()
 {
     while (!m_stop.load())
     {
         this_thread::sleep_for(chrono::seconds(2));
-        int idle = m_idleThreads.load();
-        int current = m_curThreads.load();
+        int idle = m_idleThreads.load(); //空闲线程数
+        int current = m_curThreads.load();//当前线程数
+        printf("manager check: idle=%d current=%d min=%d\n", idle, current, m_minThreads);
         if (idle > current / 2 && current > m_minThreads)
         {
             m_exitNumber.store(2);
@@ -79,7 +81,7 @@ void ThreadPool::manager()
         }
     }
 }
-
+/// @brief ThreadPool::worker 是线程池中的工作线程函数，它在一个循环中持续运行，等待任务队列中的任务。当任务队列为空时，线程会进入等待状态；当有任务时，线程取出任务执行，并在特定条件下退出线程并更新线程池状态。
 void ThreadPool::worker()
 {
     while (!m_stop.load())
@@ -90,7 +92,7 @@ void ThreadPool::worker()
             while (!m_stop && m_tasks.empty())
             {
                 m_condition.wait(locker);
-                if (m_exitNumber.load() > 0)
+                if (m_exitNumber.load() > 0)//当设置为大于0的时候 说明一些线程需要退出了
                 {
                     printf("----------------- 线程任务结束, ID: %zu\n", std::hash<std::thread::id>{}(this_thread::get_id()));
                     m_exitNumber--;
@@ -115,7 +117,7 @@ void ThreadPool::worker()
             task();
             m_idleThreads++;
         }
+        printf("worker idleThreads=%d\n", m_idleThreads.load());
     }
 }
 
-// demo functions removed: this translation unit now only implements ThreadPool

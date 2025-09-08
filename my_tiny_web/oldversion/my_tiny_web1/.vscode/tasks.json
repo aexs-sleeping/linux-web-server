@@ -11,14 +11,11 @@
                 "-pthread",
                 "main.cpp",
                 "http_conn.cpp",
-                "threadpool-dynamic.cpp",
                 "-o",
                 "output/my_tiny_web"
             ],
             "group": "build",
-            "problemMatcher": [
-                "$gcc"
-            ],
+            "problemMatcher": ["$gcc"],
             "detail": "编译多线程服务器",
             "presentation": {
                 "echo": true,
@@ -26,11 +23,6 @@
                 "focus": false,
                 "panel": "shared"
             }
-        },
-        {
-            "label": "编译压力测试",
-            "type": "shell",
-            "command": "g++ -g -O2 -pthread stress_test1.cpp threadpool-dynamic.cpp -o output/stress_test1"
         }
     ]
 }

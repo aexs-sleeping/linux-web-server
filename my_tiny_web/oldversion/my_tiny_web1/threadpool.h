@@ -7,7 +7,7 @@
 #include <exception>
 #include <pthread.h>
 /* 引用第14章介绍的线程同步机制的包装类 */
-#include "locker.h"
+#include "/home/asus/linux-high-effective/linux-high-effective/multithread-programming/code/locker.h"
 
 /* 线程池类，将它定义为模板类是为了代码复用。模板参数T是任务类 */
 template< typename T >

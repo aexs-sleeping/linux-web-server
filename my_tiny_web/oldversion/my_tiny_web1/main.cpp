@@ -11,8 +11,8 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
-#include "locker.h"
-#include "threadpool-dynamic.h"
+#include "/home/asus/linux-high-effective/linux-high-effective/multithread-programming/code/locker.h"
+#include "threadpool.h"
 #include "http_conn.h"
 
 #define MAX_FD 65536           // 最大文件描述符数
@@ -46,11 +46,10 @@ int main(int argc, char* argv[]) {
     // 忽略SIGPIPE信号（避免写关闭的连接导致进程终止）
     addsig(SIGPIPE, SIG_IGN);
 
-    // 创建线程池（使用新的 ThreadPool）
-    ThreadPool* pool = nullptr;
+    // 创建线程池
+    threadpool<http_conn>* pool = nullptr;
     try {
-        // 保持默认最小线程数4,最大为硬件并发数
-        pool = new ThreadPool(3, 8); 
+        pool = new threadpool<http_conn>;
     } catch (...) {
         return 1;
     }
@@ -94,9 +93,11 @@ int main(int argc, char* argv[]) {
             printf("epoll failure\n");
             break;
         }
+
         // 处理每个事件
         for (int i = 0; i < event_count; ++i) {
             int sockfd = events[i].data.fd;
+
             // 新连接事件
             if (sockfd == listenfd) {
                 struct sockaddr_in client_addr;
@@ -122,9 +123,7 @@ int main(int argc, char* argv[]) {
             // 读事件
             else if (events[i].events & EPOLLIN) {
                 if (users[sockfd].read()) { // 读取成功
-                    http_conn* conn = users + sockfd;
-                    // 将任务封装为无参函数并传给新的线程池
-                    pool->addTask([conn]() { conn->process(); });
+                    pool->append(users + sockfd); // 加入线程池处理
                 } else {
                     users[sockfd].close_conn(); // 读取失败则关闭
                 }

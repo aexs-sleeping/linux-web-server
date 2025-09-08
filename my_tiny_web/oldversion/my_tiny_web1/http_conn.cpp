@@ -474,6 +474,7 @@ bool http_conn::write()
 {
     int bytes_to_send = 0;
     if (m_iv_count == 0) {
+        // 尝试恢复 - 至少发送响应头
         if (m_write_idx > 0) {
             m_iv[0].iov_base = m_write_buf;
             m_iv[0].iov_len = m_write_idx;
