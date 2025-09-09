@@ -546,6 +546,7 @@ bool http_conn::write()
 // 处理客户请求的入口（调度读/写）由线程池子中的工作线程调用
 void http_conn::process()
 {
+    sleep(3);
     HTTP_CODE read_ret = process_read();
     if (read_ret == NO_REQUEST)
     {
